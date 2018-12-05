@@ -1,24 +1,62 @@
 -- Sum from file
 
+my_read :: [Char] -> Int
+my_read s = 
 
-findChar s c n = if (length s == 0 || s!!0 == c) 
+    if s!!0 == '+'
+    then my_read (tail s)
+    else read s
+
+
+findChar :: (Eq a) => a -> [a] -> Int -> Int
+findChar c [] n = n
+findChar c (x:xs) n = if (x == c) 
     then n 
-    else findChar (tail s) c (n+1)
+    else findChar c xs (n+1)
 
 
-getSum s = if (length s == 0) 
-    then 0
-    else 
-        if s!!0 == '+' 
-            then getSum (tail s)
-            else
-                let n = findChar s '\n' 0 
-                in read (take n s) + getSum (drop (n+1) s)
+split :: (Eq a) => a -> [a] -> [[a]]
+split c [] = []
+split c s = 
+    let n = findChar c s 0 in
+    [take n s] ++ split c (drop (n+1) s)
 
+
+my_map :: (a -> b) -> [a] -> [b]
+my_map f [] = []
+my_map f (x:xs) = [f x] ++ my_map f xs   -- ++ for concatenate
+
+
+---------------------------------------------------------
+
+reduce :: (a -> a -> a) -> a -> [a] -> a
+reduce f def [] = def
+reduce f def (x:xs) = f x (reduce f def xs)
+
+
+op_plus a b = a + b
+
+
+solve_A :: [Char] -> Int
+solve_A s = reduce op_plus 0 (my_map my_read (split '\n' s))
+
+
+---------------------------------------------------------
+
+duplicates :: [Int] -> [Int] -> Int
+duplicates (x:xs) y = let ynext = x + head y in
+    if (elem ynext y) then ynext else duplicates (xs ++ [x]) ([ynext] ++ y)
+
+
+solve_B :: [Char] -> Int
+solve_B s = duplicates (my_map my_read (split '\n' s)) [0]
+    
 
 main = do
     s <- readFile "01_input.txt"
---    let s = "+12\n-13\n+14\n"
-    putStrLn (show (getSum s))               -- show ~ repr
+    -- let s = "+3\n+3\n+4\n-2\n-4\n"
+    putStrLn (show (solve_B s))               -- show ~ repr
 
 
+
+-- \x y -> ...     lambdas
