@@ -1,3 +1,5 @@
+import Utilities
+
 -- Sum from file
 
 my_read :: [Char] -> Int
@@ -5,20 +7,6 @@ my_read s =
     if s!!0 == '+'
     then my_read (tail s)
     else read s
-
-
-findChar :: (Eq a) => a -> [a] -> Int
-findChar c [] = 0
-findChar c (x:xs) = if (x == c) 
-    then 0
-    else (findChar c xs) + 1
-
-
-split :: (Eq a) => a -> [a] -> [[a]]
-split c [] = []
-split c s = 
-    let n = findChar c s in
-    [take n s] ++ split c (drop (n+1) s)
 
 
 my_map :: (a -> b) -> [a] -> [b]
@@ -51,6 +39,7 @@ main = do
     s <- readFile "01_input.txt"
     -- let s = "+3\n+3\n+4\n-2\n-4\n"
     putStrLn (show (solve_A s))               -- show ~ repr
+    putStrLn (show (solve_B s))
 
 
 
