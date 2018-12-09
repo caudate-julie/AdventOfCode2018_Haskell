@@ -31,8 +31,8 @@ claims_to_rectangles xs = [(x, x+a, y, y+b) | (x, y, a, b) <- xs]
 
 --------------------------------------------------------------
 
-pixel_in_area :: (Int, Int, Int, Int) -> (Int, Int) -> Bool
-pixel_in_area (x1, x2, y1, y2) (x, y) = (x1 <= x) && (x < x2) && (y1 <= y) && (y < y2)
+pixel_in_area :: (Int, Int) -> (Int, Int, Int, Int) -> Bool
+pixel_in_area (x, y) (x1, x2, y1, y2) = (x1 <= x) && (x < x2) && (y1 <= y) && (y < y2)
 
 
 -- rectangle is in area if it overlaps
@@ -42,11 +42,10 @@ rectangle_in_area (ax1, ax2, ay1, ay2) (x1, x2, y1, y2) =
     (ay1 < y2) && (ay2 > y1)
 
 
-count_pixel :: (Int, Int) -> [(Int, Int, Int, Int)]  -> Int
-count_pixel (x, y) [] = 0
-count_pixel (x, y) (a:as) = case count_pixel (x, y) as of
-    2   -> 2
-    n   -> n + (if pixel_in_area a (x, y) then 1 else 0)
+pixel_overlap :: (Int, Int) -> [(Int, Int, Int, Int)]  -> Bool
+pixel_overlap p as = case filter (pixel_in_area p) as of
+    _:_:_  -> True
+    _      -> False
 
 
 count_area :: (Int, Int, Int, Int) -> [(Int, Int, Int, Int)]  -> Int
@@ -54,14 +53,14 @@ count_area a rs =
     let rectangles = [r | r <- rs, rectangle_in_area a r]
         (x1, x2, y1, y2) = a
         pixels = [(x, y) | x <- [x1..x2-1], y <- [y1..y2-1]] in
-    sum[1 | p <- pixels, count_pixel p rectangles == 2]
+    length (filter (flip pixel_overlap rectangles) pixels)
 
 
 solve_A :: [[Char]] -> Int
 solve_A s = 
     let areas = [(i*32, i*32 + 32, j*32, j*32 + 32) | i <- [0..31], j <- [0..31]] 
         rectangles = (claims_to_rectangles . parse_claims) s in
-    sum[count_area a rectangles | a <- areas]
+    sum [count_area a rectangles | a <- areas]
 
 ------------------------------------------------------
 
