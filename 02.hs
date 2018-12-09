@@ -39,25 +39,21 @@ common_letters xs ys =
         xs      -> Nothing
 
 
-find_match_by_string :: [[Char]] -> [Char] -> Maybe [Char]
-find_match_by_string [] s = Nothing
-find_match_by_string (x:xs) s = 
-    case (common_letters x s) of 
-        Nothing     -> find_match_by_string xs s
-        x           -> x
+make_pairs :: [a] -> [(a, a)]
+make_pairs [] = []
+make_pairs (x:xs) = [(x, y) | y <- xs] ++ make_pairs xs
 
 
-find_match :: [[Char]] -> Maybe [Char]
-find_match [] = Nothing
-find_match (x:xs)= 
-    let match = find_match_by_string xs x in
-    if match == Nothing 
-    then find_match xs
-    else match
+find_match :: [[Char]] -> [[Char]]
+find_match s = 
+    let pairs = make_pairs s
+        commons = [common_letters x y | (x, y) <- pairs] in
+    [x | Just x <- commons]
+
 
 
 solve_B :: [[Char]] -> [Char]
-solve_B s = let Just x = find_match s in x
+solve_B s = let [x] = find_match s in x
 
 -----------------------------------------------------
 
