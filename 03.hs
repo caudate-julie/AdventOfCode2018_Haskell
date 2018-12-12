@@ -62,14 +62,20 @@ solve_A lines =
 rectangle_has_overlaps ::  Rectangle -> [Rectangle] -> Bool
 rectangle_has_overlaps r rs = any (rectangles_intersect r) rs
 
-find_not_overlapping :: [(Int, Int, Int, Int, Int)] -> [Int]
-find_not_overlapping s = 
-    let rectangles = map claim_to_rectangle s
-        z = zip [id | (id, _, _, _, _) <- s] rectangles in
-    [id | (id, r) <- z, not (rectangle_has_overlaps r ((take (id-1) rectangles) ++ (drop id rectangles)))]
+
+find_not_overlapping :: [(Int, Rectangle)] -> [Int]
+find_not_overlapping xs =
+    [id | (id, r) <- xs, no_overlaps id r]
+    where
+        no_overlaps :: Int -> Rectangle -> Bool
+        no_overlaps id r = not (rectangle_has_overlaps r [r' | (id', r') <- xs, id' /= id])
+    
 
 solve_B :: [[Char]] -> [Int]
-solve_B lines = find_not_overlapping (map parse_claim lines)
+solve_B lines = 
+    let claims = map parse_claim lines
+        z = [(id, claim_to_rectangle claim) | claim@(id, _, _, _, _) <- claims] in
+    find_not_overlapping z
 
 -----------------------------------------------------
 
