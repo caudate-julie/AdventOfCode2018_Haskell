@@ -3,25 +3,17 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
 
-increment :: Maybe Int -> Int
-increment Nothing = 1
-increment (Just x) = x + 1
+count_occurrences :: Ord a => [a] -> Map a Int
+count_occurrences xs = Map.fromListWith (+) [(x, 1) | x <- xs]
 
 
-count_all :: Ord a => [a] -> Map a Int
-count_all [] = Map.empty
-count_all (x:xs) = 
-    let m = count_all xs
-        v = Map.lookup x m in
-    Map.insert x (increment v) m
-
-
-count_boxes :: Int -> [[Int]] -> Int
-count_boxes a xs = sum [1 | x <- xs, elem a x]
+count_boxes :: (Eq a) => a -> [[a]] -> Int
+count_boxes a = length . filter (elem a)
+-- count_boxes a xs = sum [1 | x <- xs, elem a x]
 
 
 solve_A :: [[Char]] -> Int
-solve_A s = let elems = map (Map.elems . count_all) s in
+solve_A s = let elems = map (Map.elems . count_occurrences) s in
     (count_boxes 2 elems) * (count_boxes 3 elems)
 
 ------------------------------------------------------
@@ -31,6 +23,7 @@ strict_zip [] [] = []
 strict_zip (x:xs) (y:ys) = [(x, y)] ++ strict_zip xs ys
 
 
+-- "abcde" -> "abxde" --> Just "abde"
 common_letters :: [Char] -> [Char] -> Maybe [Char]
 common_letters xs ys = 
     case [1 | (x, y) <- (strict_zip xs ys), x /= y] of
@@ -49,7 +42,6 @@ find_match s =
     let pairs = make_pairs s
         commons = [common_letters x y | (x, y) <- pairs] in
     [x | Just x <- commons]
-
 
 
 solve_B :: [[Char]] -> [Char]
