@@ -1,15 +1,4 @@
 import Utilities
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-
--- slice '?' '!' "ab?def!g" = "def"
--- slice '?' '!' "ab?defg" = "defg"
-slice :: (Eq a) => a -> a -> [a] -> [a]
-slice x y s = 
-    let ix = findChar x s
-        s1 = drop (ix+1) s
-        iy = findChar y s1 in
-    take iy s1
 
 
 -- "#4 @ 342,752: 19x17" => (342, 752, 19, 17)
