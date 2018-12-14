@@ -27,3 +27,46 @@ slice x y s =
         s1 = drop (ix+1) s
         iy = findChar y s1 in
     take iy s1
+
+
+------------------------------------------
+-- by-key comparisons 
+
+min_by_key :: Ord b => (a -> b) -> a -> a -> a
+min_by_key key x y = if (key x) < (key y) then x else y
+
+
+max_by_key :: Ord b => (a -> b) -> a -> a -> a
+max_by_key key x y = if (key x) < (key y) then y else x
+
+
+data Uniquable x = Single x | Multiple x | Empty
+
+
+strict_min_by_key :: Ord b => (a -> b) -> Uniquable a -> a -> Uniquable a
+strict_min_by_key key Empty y = Single y
+strict_min_by_key key (Single x) y = 
+        case compare (key x) (key y) of
+            LT  -> Single x
+            GT  -> Single y
+            EQ  -> Multiple x
+strict_min_by_key key (Multiple x) y = 
+        case compare (key x) (key y) of
+            LT  -> Multiple x
+            GT  -> Single y
+            EQ  -> Multiple x
+
+
+strict_max_by_key :: Ord b => (a -> b) -> Uniquable a -> a -> Uniquable a
+strict_max_by_key key Empty y = Single y
+strict_max_by_key key (Single x) y = 
+        case compare (key x) (key y) of
+            LT  -> Single y
+            GT  -> Single x
+            EQ  -> Multiple x
+strict_max_by_key key (Multiple x) y = 
+        case compare (key x) (key y) of
+            LT  -> Single y
+            GT  -> Multiple x
+            EQ  -> Multiple x
+

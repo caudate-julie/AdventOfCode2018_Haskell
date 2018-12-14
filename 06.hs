@@ -6,23 +6,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 
 
-maximum_by_key :: Ord b => (a -> b) -> [a] -> a
-maximum_by_key key [x] = x
-maximum_by_key key (x:xs) = 
-    let xm = maximum_by_key key xs in
-    if (key xm) > (key x) then xm else x
-
-
-strict_minimum_by_key :: Ord b => (a -> b) -> [a] -> Maybe a
-strict_minimum_by_key key [x] = Just x
-strict_minimum_by_key key (x:xs) =
-    case strict_minimum_by_key key xs of
-        Nothing     -> Just x
-        Just y      -> if (key x) < (key y)       then Just x
-                       else if (key x) > (key y)  then Just y
-                       else                       Nothing
-
-
 get_coordinates :: [[Char]] -> [(Int, Int)]
 get_coordinates lines = [(x, y) | line <- lines,
                                   let [x, y] = map read (split ',' line)]
@@ -41,8 +24,8 @@ dist :: (Int, Int) -> (Int, Int) -> Int
 dist (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
 
 
-closest :: (Int, Int) -> [(Int, Int)] -> Maybe (Int, Int)
-closest p towns = strict_minimum_by_key (dist p) towns
+closest :: (Int, Int) -> [(Int, Int)] -> Uniquable (Int, Int)
+closest p towns = foldl (strict_min_by_key (dist p)) Empty towns
 
 
 regions :: (Int, Int, Int, Int) -> [(Int, Int)] -> Map (Int, Int) [(Int, Int)]
@@ -50,17 +33,15 @@ regions (x1, y1, x2, y2) towns =
     let ls = [(town, [(x, y)]) 
                 | x <- [x1..x2]
                 , y <- [y1..y2]
-                , Just town <- [closest (x, y) towns]]
+                , Single town <- [closest (x, y) towns]]
     in Map.fromListWith (++) ls
 
 
 infinites :: (Int, Int, Int, Int) -> [(Int, Int)] -> Set (Int, Int)
 infinites (x1, y1, x2, y2) towns = Set.fromList onbound
     where 
-        onbound = [c | x <- [x1..x2], Just c <- [closest (x, y1) towns]]
-               ++ [c | x <- [x1..x2], Just c <- [closest (x, y2) towns]]
-               ++ [c | y <- [y1..y2], Just c <- [closest (x1, y) towns]]
-               ++ [c | y <- [y1..y2], Just c <- [closest (x2, y) towns]]
+        onbound = [c | x <- [x1..x2], y <- [y1, y2], Single c <- [closest (x, y) towns]]
+               ++ [c | x <- [x1, x2], y <- [y1..y2], Single c <- [closest (x, y) towns]]
 
 
 -- most_dangerous :: (Int, Int, Int, Int) -> [(Int, Int)] -> (Int, Int)
@@ -75,10 +56,9 @@ infinites (x1, y1, x2, y2) towns = Set.fromList onbound
 most_dangerous :: (Int, Int, Int, Int) -> [(Int, Int)] -> Int
 most_dangerous bounds towns = 
     let rs = regions bounds towns
-        onbound = infinites bounds towns
-        inbound = [r | r <- towns, Set.notMember r onbound]    
+        onbound = infinites bounds towns 
     in
-        maximum [length (rs Map.! r) | r <- inbound]
+        maximum [length (rs Map.! r) | r <- towns, Set.notMember r onbound]
 
 
 solve_A :: [[Char]] -> Int
@@ -88,7 +68,22 @@ solve_A lines =
     in most_dangerous bounds coords
 
 
+in_range_of :: Int -> (Int, Int, Int, Int) -> [(Int, Int)] -> Int
+in_range_of max_dist (x1, y1, x2, y2) towns = 
+    let dists = [sum [dist (x, y) t | t <- towns] 
+                     | x <- [x1..x2], y <- [y1..y2]]
+    in sum[1 | d <- dists, d < max_dist]
+
+
+solve_B :: Int -> [[Char]] -> Int
+solve_B max_dist lines =
+    let coords = get_coordinates lines
+        bounds = get_boundaries coords
+    in in_range_of max_dist bounds coords
+
+
 main = do
     s <- readFile "06_input.txt"
     let lines = split '\n' s
     putStrLn (show (solve_A lines))
+    putStrLn (show (solve_B 10000 lines))
