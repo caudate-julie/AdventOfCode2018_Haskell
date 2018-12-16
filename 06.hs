@@ -44,15 +44,6 @@ infinites (x1, y1, x2, y2) towns = Set.fromList onbound
                ++ [c | x <- [x1, x2], y <- [y1..y2], Single c <- [closest (x, y) towns]]
 
 
--- most_dangerous :: (Int, Int, Int, Int) -> [(Int, Int)] -> (Int, Int)
--- most_dangerous bounds towns = 
---     let rs = regions bounds towns
---         onbound = infinites bounds towns
---         inbound = [r | r <- (Map.keys rs), Set.notMember r onbound]
---     in
---         maximum_by_key (length . ((Map.!) rs)) inbound
-
-
 most_dangerous :: (Int, Int, Int, Int) -> [(Int, Int)] -> Int
 most_dangerous bounds towns = 
     let rs = regions bounds towns
@@ -67,6 +58,7 @@ solve_A lines =
         bounds = get_boundaries coords
     in most_dangerous bounds coords
 
+--------------------------------------------------------
 
 in_range_of :: Int -> (Int, Int, Int, Int) -> [(Int, Int)] -> Int
 in_range_of max_dist (x1, y1, x2, y2) towns = 
@@ -81,6 +73,7 @@ solve_B max_dist lines =
         bounds = get_boundaries coords
     in in_range_of max_dist bounds coords
 
+--------------------------------------------------------
 
 main = do
     s <- readFile "06_input.txt"

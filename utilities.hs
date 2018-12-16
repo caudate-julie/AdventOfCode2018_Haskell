@@ -19,6 +19,13 @@ sort [] = []
 sort (x:xs) = sort [y | y <- xs, y < x] ++ [y | y <- (x:xs), y == x] ++ sort [y | y <- xs, y > x]
 
 
+sortBy :: (Ord b) => (a -> b) -> [a] -> [a]
+sortBy f [] = []
+sortBy f (x:xs) = sortBy f [y | y <- xs, f y < f x]
+             ++ [y | y <- (x:xs), f y == f x]
+             ++ sortBy f [y | y <- xs, f y > f x]
+
+
 -- slice '?' '!' "ab?def!g" = "def"
 -- slice '?' '!' "ab?defg" = "defg"
 slice :: (Eq a) => a -> a -> [a] -> [a]
