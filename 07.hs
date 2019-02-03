@@ -3,7 +3,6 @@ import qualified Data.Set as Set
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.List (delete)
-import Data.List (minimumBy)
 import Utilities
 import Data.Char (ord)
 
@@ -55,60 +54,49 @@ solve_A lines =
 
 --------------------------------------------------------
 
--- ongoing is [(Char, Int)] : [(instruction, finish time)]
+data State = State { time :: Int
+                   , ongoing :: [(Char, Int)]       -- [(instruction, finish time)]
+                   , pending :: [(Char, [Char])]    -- [(instruction, dependencies)]
+                   }
 
 
 runtime :: Char -> Int
 runtime instruction = (a_time + ord(instruction) - ord('A'))
 
--- current time -> ongoing -> pending instructions -> new ongoing
-add_timed_labors :: Int -> [(Char, Int)] -> [(Char, [Char])] -> [(Char, Int)]
-add_timed_labors time ongoing [] = ongoing
-add_timed_labors time ongoing ((c, []):xs) = 
-    if length ongoing == workers_amount
-    then ongoing
-    else add_timed_labors time (ongoing ++ [(c, time + runtime c)]) xs
-add_timed_labors time ongoing (x:xs) = add_timed_labors time ongoing xs
-
-
-delete_running :: [(Char, Int)] -> [(Char, [Char])] -> [(Char, [Char])]
-delete_running ongoing instructions = 
-    let list = [c | (c, t) <- ongoing]
-    in filter (\(c, xs) -> notElem c list) instructions
-
 
 next_time_point :: [(Char, Int)] -> Int
-next_time_point ongoing = 
-    let comp (cx, tx) (cy, ty) = compare tx ty
-        (c, time) = minimumBy comp ongoing
-    in time
+next_time_point ongoing = minimum [t | (c, t) <- ongoing]
 
 
--- ongoing -> pending instructions -> (next time point, still ongoing, still pending)
-time_flies :: [(Char, Int)] -> [(Char, [Char])] -> (Int, [(Char, Int)], [(Char, [Char])])
-time_flies ongoing instructions =
+add_labors :: State -> State
+add_labors State {time=time, ongoing=ongoing, pending=pending} =
+    let ready = [c | (c, []) <- pending]
+        n = workers_amount - length ongoing
+        new_ongoing = ongoing ++ [(c, time + runtime c) | c <- take n ready]
+        runninglist = [c | (c, t) <- new_ongoing]
+        new_pending = [(c, deps) | (c, deps) <- pending, c `notElem` runninglist]
+    in State{time = time, ongoing = new_ongoing, pending = new_pending}
+
+
+time_flies :: State -> State
+time_flies State {time=_, ongoing=ongoing, pending=pending} =
     let time = next_time_point ongoing
         finished = [c | (c, t) <- ongoing, t == time]
-        updated_instructions = foldr carry_instruction instructions finished
-        updated_ongoing = [(c, t) | (c, t) <- ongoing, notElem c finished]
-    in (time, updated_ongoing, updated_instructions)
+        updated_pending = foldr carry_instruction pending finished
+        updated_ongoing = [(c, t) | (c, t) <- ongoing, c `notElem` finished]
+    in State{time=time, ongoing=updated_ongoing, pending=updated_pending}
 
 
-time_cycle :: (Int, [(Char, Int)], [(Char, [Char])]) -> Int
-time_cycle (time, ongoing, instructions) = 
-    let updated_ongoing = add_timed_labors time ongoing instructions
-        updated_instructions = delete_running updated_ongoing instructions
-    in case updated_ongoing of
-        [] -> time
-        xs -> let next_state = time_flies updated_ongoing updated_instructions
-              in time_cycle next_state
+sleigh_finished :: State -> Bool
+sleigh_finished s = ongoing s == []
 
 
 solve_B lines = 
     let instructions = parse_instructions lines 
         graph = fill_graph (create_empty_graph instructions) instructions
         list = Map.toAscList graph
-    in time_cycle (0, [], list)
+        initial = State{time=0, ongoing=[], pending=list}
+    in time $ until sleigh_finished (add_labors . time_flies) (add_labors initial)
 
 
 --------------------------------------------------------
@@ -119,4 +107,5 @@ a_time = 61
 main = do
     s <- readFile ("07_input.txt")
     let lines = split '\n' s
+    putStrLn (show (solve_A lines))
     putStrLn (show (solve_B lines))
